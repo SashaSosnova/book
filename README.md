@@ -24,6 +24,7 @@ npm run dev
 - секретные подарки ★ в отдельных главах
 - счёт, выплаты и режим родителя (PIN)
 
-## Дальше
+# Дальше
 
-- обернуть в Capacitor для Android
+- Android APK собирается GitHub Actions (workflow `Build Android APK`)
+- Локально: `npm run mobile:sync` (нужны Android Studio / SDK)

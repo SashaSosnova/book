@@ -1,4 +1,4 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { HashRouter, Navigate, Route, Routes } from 'react-router-dom'
 import Home from './pages/Home'
 import ChapterPage from './pages/ChapterPage'
 import QuizPage from './pages/QuizPage'
@@ -7,7 +7,7 @@ import { ParentModeToggle } from './components/ParentMode'
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <div className="app-shell">
         <Routes>
           <Route path="/" element={<Home />} />
@@ -18,6 +18,6 @@ export default function App() {
         </Routes>
         <ParentModeToggle />
       </div>
-    </BrowserRouter>
+    </HashRouter>
   )
 }
