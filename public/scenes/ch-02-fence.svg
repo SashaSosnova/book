@@ -1,0 +1,137 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" role="img">
+  <defs>
+    <!-- screentone -->
+    <pattern id="tone" width="4" height="4" patternUnits="userSpaceOnUse">
+      <circle cx="1" cy="1" r="0.7" fill="#111"/>
+    </pattern>
+    <pattern id="tone-dense" width="3" height="3" patternUnits="userSpaceOnUse">
+      <circle cx="0.8" cy="0.8" r="0.65" fill="#111"/>
+    </pattern>
+    <pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(35)">
+      <line x1="0" y1="0" x2="0" y2="6" stroke="#111" stroke-width="1"/>
+    </pattern>
+  </defs>
+
+  <!-- manga panel -->
+  <rect x="6" y="6" width="308" height="188" fill="#fff" stroke="#111" stroke-width="4"/>
+  <rect x="10" y="10" width="300" height="180" fill="#f7f7f5" stroke="#111" stroke-width="1.5"/>
+
+  <!-- sky with tone -->
+  <rect x="12" y="12" width="296" height="100" fill="#fff"/>
+  <rect x="12" y="12" width="296" height="100" fill="url(#tone)" opacity="0.18"/>
+
+  <!-- speed/action lines -->
+  <g stroke="#111" stroke-width="1.2" opacity="0.35">
+    <line x1="220" y1="18" x2="300" y2="28"/>
+    <line x1="230" y1="30" x2="304" y2="48"/>
+    <line x1="236" y1="44" x2="302" y2="70"/>
+  </g>
+
+  <!-- grass -->
+  <rect x="12" y="112" width="296" height="76" fill="#fff"/>
+  <rect x="12" y="112" width="296" height="76" fill="url(#tone)" opacity="0.28"/>
+  <path d="M12 112 Q90 104 160 112 T308 112" fill="none" stroke="#111" stroke-width="2"/>
+
+  <!-- fence (manga ink) -->
+  <g fill="#fff" stroke="#111" stroke-width="2.2" stroke-linejoin="round">
+    <path d="M30 60 v78 h16 v-78 q-8-10-16 0z"/>
+    <path d="M54 54 v84 h16 v-84 q-8-10-16 0z"/>
+    <path d="M78 58 v80 h16 v-80 q-8-10-16 0z"/>
+    <path d="M102 50 v88 h16 v-88 q-8-10-16 0z"/>
+    <path d="M126 56 v82 h16 v-82 q-8-10-16 0z"/>
+    <path d="M150 52 v86 h16 v-86 q-8-10-16 0z"/>
+    <path d="M174 58 v80 h16 v-80 q-8-10-16 0z"/>
+  </g>
+  <!-- wet white paint patches -->
+  <g fill="#fff" stroke="#111" stroke-width="1.2">
+    <rect x="56" y="64" width="12" height="26"/>
+    <rect x="104" y="58" width="12" height="32"/>
+    <rect x="152" y="62" width="12" height="28"/>
+  </g>
+  <rect x="28" y="96" width="170" height="7" fill="#111"/>
+  <!-- unpainted boards: hatch -->
+  <rect x="32" y="78" width="12" height="16" fill="url(#hatch)" opacity="0.45"/>
+  <rect x="128" y="74" width="12" height="18" fill="url(#hatch)" opacity="0.45"/>
+
+  <!-- Tom (manga face) -->
+  <g transform="translate(112,86)">
+    <!-- body -->
+    <path d="M10 28 h28 l4 34 h-36z" fill="#fff" stroke="#111" stroke-width="2"/>
+    <rect x="10" y="28" width="28" height="14" fill="url(#tone-dense)" opacity="0.35"/>
+    <!-- legs -->
+    <path d="M12 62 v22 M32 62 v22" stroke="#111" stroke-width="3" stroke-linecap="round"/>
+    <!-- head -->
+    <circle cx="24" cy="16" r="14" fill="#fff" stroke="#111" stroke-width="2.2"/>
+    <!-- soft hair cap — solid, no crown bumps -->
+    <path d="M10 16 Q11 6 24 5 Q37 6 38 16 Q30 10 24 11 Q18 10 10 16 Z" fill="#111"/>
+    <!-- eyes (manga) -->
+    <ellipse cx="19" cy="16" rx="3.2" ry="4" fill="#111"/>
+    <ellipse cx="29" cy="16" rx="3.2" ry="4" fill="#111"/>
+    <circle cx="20" cy="14.5" r="1" fill="#fff"/>
+    <circle cx="30" cy="14.5" r="1" fill="#fff"/>
+    <!-- sly smile -->
+    <path d="M18 23 Q24 27 30 23" fill="none" stroke="#111" stroke-width="1.6" stroke-linecap="round"/>
+    <!-- brush -->
+    <g transform="rotate(-18 48 24)">
+      <rect x="36" y="22" width="28" height="3.5" fill="#111"/>
+      <rect x="62" y="17" width="12" height="14" fill="#fff" stroke="#111" stroke-width="1.6"/>
+      <line x1="64" y1="20" x2="72" y2="20" stroke="#111" stroke-width="1"/>
+      <line x1="64" y1="24" x2="72" y2="24" stroke="#111" stroke-width="1"/>
+      <line x1="64" y1="28" x2="72" y2="28" stroke="#111" stroke-width="1"/>
+    </g>
+  </g>
+
+  <!-- watching boy -->
+  <g transform="translate(236,98)">
+    <path d="M6 24 h22 l3 30 h-28z" fill="#fff" stroke="#111" stroke-width="2"/>
+    <rect x="6" y="24" width="22" height="12" fill="url(#tone)" opacity="0.5"/>
+    <circle cx="17" cy="14" r="12" fill="#fff" stroke="#111" stroke-width="2"/>
+    <path d="M7 12 Q12 5 17 6 Q22 5 27 12" fill="#111"/>
+    <path d="M10 9 Q12 6 14 9 M16 7 Q17 4 19 7 M21 9 Q23 6 24 9" fill="none" stroke="#111" stroke-width="1.2"/>
+    <!-- surprised eyes -->
+    <circle cx="13" cy="14" r="2.8" fill="#111"/>
+    <circle cx="21" cy="14" r="2.8" fill="#111"/>
+    <circle cx="13.8" cy="13" r="0.8" fill="#fff"/>
+    <circle cx="21.8" cy="13" r="0.8" fill="#fff"/>
+    <path d="M14 21 Q17 24 20 21" fill="none" stroke="#111" stroke-width="1.4"/>
+    <!-- apple -->
+    <circle cx="34" cy="28" r="6" fill="#fff" stroke="#111" stroke-width="1.8"/>
+    <path d="M34 22 v-5" stroke="#111" stroke-width="1.5"/>
+    <path d="M34 18 q4 -2 5 2" fill="none" stroke="#111" stroke-width="1.2"/>
+  </g>
+
+  <!-- labels -->
+  <g transform="translate(30,155)">
+    <rect x="0" y="0" width="54" height="16" rx="3" fill="#111"/>
+    <text x="6" y="12" font-family="Segoe UI, Arial, sans-serif" font-size="9" font-weight="700" fill="#fff">ЗАБОР</text>
+  </g>
+  <g transform="translate(100,155)">
+    <rect x="0" y="0" width="54" height="16" rx="3" fill="#111"/>
+    <text x="6" y="12" font-family="Segoe UI, Arial, sans-serif" font-size="9" font-weight="700" fill="#fff">КИСТЬ</text>
+  </g>
+  <g transform="translate(245,155)">
+    <rect x="0" y="0" width="54" height="16" rx="3" fill="#111"/>
+    <text x="6" y="12" font-family="Segoe UI, Arial, sans-serif" font-size="9" font-weight="700" fill="#fff">ЯБЛОКО</text>
+  </g>
+
+  <!-- paint bucket -->
+  <g transform="translate(88,128)">
+    <path d="M4 6 h20 l-2 20 H6z" fill="#fff" stroke="#111" stroke-width="2"/>
+    <ellipse cx="14" cy="6" rx="10" ry="3" fill="#fff" stroke="#111" stroke-width="1.6"/>
+    <rect x="8" y="10" width="12" height="8" fill="url(#tone-dense)" opacity="0.25"/>
+  </g>
+
+  <!-- manga SFX -->
+  <g transform="translate(198,28)">
+    <rect x="0" y="0" width="44" height="22" fill="#fff" stroke="#111" stroke-width="2.5"/>
+    <rect x="2" y="2" width="40" height="18" fill="none" stroke="#111" stroke-width="1"/>
+    <text x="8" y="16" font-family="Arial Black, Impact, sans-serif" font-size="11" font-weight="900" fill="#111">ШШ!</text>
+  </g>
+
+  <!-- small speech bubble -->
+  <g transform="translate(148,42)">
+    <ellipse cx="42" cy="18" rx="40" ry="16" fill="#fff" stroke="#111" stroke-width="2"/>
+    <path d="M28 32 L22 44 L36 34" fill="#fff" stroke="#111" stroke-width="2" stroke-linejoin="round"/>
+    <text x="14" y="22" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="700" fill="#111">Это искусство!</text>
+  </g>
+</svg>

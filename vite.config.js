@@ -13,6 +13,7 @@ export default defineConfig({
         '**/public-releases/**',
         '**/tmp-apk/**',
         '**/release/**',
+        '**/.tmp-screens/**',
       ],
     },
   },

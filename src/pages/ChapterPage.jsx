@@ -21,8 +21,10 @@ import {
   getFunMarks,
   getWordLoot,
 } from '../utils/chapterDisplay'
+import { getChapterScene } from '../data/chapterScenes'
 import { checkQuizGate, getQuizGate } from '../utils/quizGates'
 import BalanceBadge from '../components/BalanceBadge'
+import ChapterScene from '../components/ChapterScene'
 import GiftClaimCard from '../components/GiftClaimCard'
 import YourMoveCard from '../components/YourMoveCard'
 import { ParentOnly, useParentMode } from '../components/ParentMode'
@@ -142,6 +144,8 @@ export default function ChapterPage() {
         </section>
       )}
 
+      <ChapterScene chapter={chapter} />
+
       {chapter.previousChapterSummary && (
         <details className="panel panel--muted recap-details">
           <summary>Что было раньше</summary>
@@ -149,7 +153,7 @@ export default function ChapterPage() {
         </details>
       )}
 
-      {hook && (
+      {hook && !getChapterScene(chapter) && !chapter.scene && (
         <section className="panel chapter-hook">
           <p className="chapter-hook__text">{hook}</p>
         </section>
