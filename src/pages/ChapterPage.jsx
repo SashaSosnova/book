@@ -136,8 +136,10 @@ export default function ChapterPage() {
 
       {chapter.vocabulary?.length > 0 && (
         <section className="panel">
-          <h2>Слова из главы</h2>
-          <p className="hint">Их можно отметить маркером в книге — и запомнить значение.</p>
+          <h2>Интересные словосочетания</h2>
+          <p className="hint">
+            Живые обороты из главы — их можно отметить маркером в книге и запомнить.
+          </p>
           <dl className="vocab-list">
             {chapter.vocabulary.map((item) => (
               <div className="vocab-item" key={item.word}>
@@ -146,6 +148,14 @@ export default function ChapterPage() {
               </div>
             ))}
           </dl>
+        </section>
+      )}
+
+      {chapter.thinkQuestion && (
+        <section className="panel think-panel">
+          <h2>Подумай</h2>
+          <p className="hint">Тут нет «правильного» ответа — просто порассуждай (можно вслух с мамой или папой).</p>
+          <p className="think-question">{chapter.thinkQuestion}</p>
         </section>
       )}
 
@@ -192,7 +202,7 @@ export default function ChapterPage() {
             <div className="mark-groups">
               {chapter.vocabulary?.length > 0 && (
                 <div>
-                  <h3>Слова</h3>
+                  <h3>Словосочетания</h3>
                   <ul className="highlight-list">
                     {chapter.vocabulary.map((item) => (
                       <li key={item.word}>

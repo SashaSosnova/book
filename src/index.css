@@ -222,6 +222,17 @@ h2 {
   color: var(--ink);
 }
 
+.think-panel .think-question {
+  margin: 12px 0 0;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: #f7f1e4;
+  border: 1px solid #e4d7c0;
+  font-size: 1.05rem;
+  font-weight: 650;
+  line-height: 1.45;
+}
+
 .mark-groups {
   display: grid;
   gap: 14px;
