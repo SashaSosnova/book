@@ -5,4 +5,15 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   base: './',
+  server: {
+    watch: {
+      // APK / Android assets can lock files on Windows and crash the watcher
+      ignored: [
+        '**/android/**',
+        '**/public-releases/**',
+        '**/tmp-apk/**',
+        '**/release/**',
+      ],
+    },
+  },
 })
