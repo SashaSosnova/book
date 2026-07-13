@@ -1,8 +1,19 @@
+import { Preferences } from '@capacitor/preferences'
+
 const BALANCE_KEY = 'tom-sawyer-balance'
 const COMPLETED_KEY = 'tom-sawyer-completed'
 const REFLECTION_KEY = 'tom-sawyer-reflection'
 const PAYOUTS_KEY = 'tom-sawyer-payouts'
 const GIFTS_KEY = 'tom-sawyer-gifts'
+const BACKUP_VERSION = 1
+
+const ALL_KEYS = [
+  BALANCE_KEY,
+  COMPLETED_KEY,
+  REFLECTION_KEY,
+  PAYOUTS_KEY,
+  GIFTS_KEY,
+]
 
 function readJson(key, fallback) {
   try {
@@ -13,6 +24,24 @@ function readJson(key, fallback) {
   }
 }
 
+function writeLocal(key, value) {
+  localStorage.setItem(key, value)
+}
+
+/** Дублируем в Capacitor Preferences — надёжнее при обновлении APK. */
+async function mirrorToNative(key, value) {
+  try {
+    await Preferences.set({ key, value })
+  } catch {
+    // Браузер без Capacitor — ок
+  }
+}
+
+function persist(key, value) {
+  writeLocal(key, value)
+  void mirrorToNative(key, value)
+}
+
 export function getBalance() {
   const value = Number(localStorage.getItem(BALANCE_KEY))
   return Number.isFinite(value) ? value : 0
@@ -20,7 +49,7 @@ export function getBalance() {
 
 export function setBalance(amount) {
   const next = Math.max(0, Number(amount) || 0)
-  localStorage.setItem(BALANCE_KEY, String(next))
+  persist(BALANCE_KEY, String(next))
   return next
 }
 
@@ -59,7 +88,7 @@ export function payout(amount) {
     date: new Date().toISOString(),
     balanceAfter: nextBalance,
   })
-  localStorage.setItem(PAYOUTS_KEY, JSON.stringify(history))
+  persist(PAYOUTS_KEY, JSON.stringify(history))
 
   return { ok: true, paid, balance: nextBalance }
 }
@@ -78,7 +107,7 @@ export function collectGift(giftId) {
     return { ok: false, error: 'Этот подарок уже собран' }
   }
   collected.push(giftId)
-  localStorage.setItem(GIFTS_KEY, JSON.stringify(collected))
+  persist(GIFTS_KEY, JSON.stringify(collected))
   return { ok: true, collected }
 }
 
@@ -95,7 +124,7 @@ export function markChapterCompleted(chapterId) {
   const completed = getCompletedChapters()
   if (!completed.includes(id)) {
     completed.push(id)
-    localStorage.setItem(COMPLETED_KEY, JSON.stringify(completed))
+    persist(COMPLETED_KEY, JSON.stringify(completed))
   }
   return completed
 }
@@ -107,6 +136,60 @@ export function getReflectionAnswers() {
 export function saveReflectionAnswer(index, value) {
   const answers = getReflectionAnswers()
   answers[index] = value
-  localStorage.setItem(REFLECTION_KEY, JSON.stringify(answers))
+  persist(REFLECTION_KEY, JSON.stringify(answers))
   return answers
+}
+
+export function exportBackup() {
+  return {
+    version: BACKUP_VERSION,
+    exportedAt: new Date().toISOString(),
+    data: {
+      [BALANCE_KEY]: localStorage.getItem(BALANCE_KEY),
+      [COMPLETED_KEY]: localStorage.getItem(COMPLETED_KEY),
+      [REFLECTION_KEY]: localStorage.getItem(REFLECTION_KEY),
+      [PAYOUTS_KEY]: localStorage.getItem(PAYOUTS_KEY),
+      [GIFTS_KEY]: localStorage.getItem(GIFTS_KEY),
+    },
+  }
+}
+
+export function importBackup(backup) {
+  if (!backup || typeof backup !== 'object' || !backup.data) {
+    return { ok: false, error: 'Неверный файл бэкапа' }
+  }
+
+  for (const key of ALL_KEYS) {
+    const value = backup.data[key]
+    if (value == null) continue
+    persist(key, String(value))
+  }
+
+  window.dispatchEvent(new Event('tom-sawyer-balance'))
+  window.dispatchEvent(new Event('tom-sawyer-gifts'))
+  return { ok: true }
+}
+
+/**
+ * При старте: если localStorage пуст, а в Preferences есть данные — восстанавливаем.
+ * Если localStorage есть — копируем в Preferences (на случай первого запуска на устройстве).
+ */
+export async function hydrateStorage() {
+  try {
+    for (const key of ALL_KEYS) {
+      const localValue = localStorage.getItem(key)
+      const native = await Preferences.get({ key })
+
+      if ((localValue == null || localValue === '') && native.value) {
+        writeLocal(key, native.value)
+      } else if (localValue != null && localValue !== '') {
+        await Preferences.set({ key, value: localValue })
+      }
+    }
+  } catch {
+    // Web / без плагина
+  }
+
+  window.dispatchEvent(new Event('tom-sawyer-balance'))
+  window.dispatchEvent(new Event('tom-sawyer-gifts'))
 }

@@ -6,6 +6,7 @@ import {
   subscribeParentMode,
   unlockParentMode,
 } from '../utils/parentMode'
+import { exportBackup, importBackup } from '../utils/storage'
 
 export function useParentMode() {
   return useSyncExternalStore(subscribeParentMode, isParentMode, () => false)
@@ -49,6 +50,37 @@ export function ParentModeToggle() {
     setNewPin('')
   }
 
+  function handleExportBackup() {
+    const backup = exportBackup()
+    const blob = new Blob([JSON.stringify(backup, null, 2)], {
+      type: 'application/json',
+    })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `tom-sawyer-backup-${new Date().toISOString().slice(0, 10)}.json`
+    link.click()
+    URL.revokeObjectURL(url)
+    setMessage('Бэкап скачан. Сохраните файл в надёжном месте.')
+  }
+
+  function handleImportBackup(event) {
+    const file = event.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      try {
+        const backup = JSON.parse(String(reader.result))
+        const result = importBackup(backup)
+        setMessage(result.ok ? 'Прогресс восстановлен из бэкапа.' : result.error)
+      } catch {
+        setMessage('Не удалось прочитать файл бэкапа')
+      }
+    }
+    reader.readAsText(file)
+    event.target.value = ''
+  }
+
   if (unlocked) {
     return (
       <div className="parent-mode-bar parent-mode-bar--on">
@@ -71,8 +103,28 @@ export function ParentModeToggle() {
               Сохранить
             </button>
           </form>
-          {message && <p className="hint">{message}</p>}
         </details>
+        <details className="parent-pin-change">
+          <summary>Бэкап прогресса</summary>
+          <p className="hint">
+            Монеты и пройденные главы хранятся на телефоне. Перед переустановкой сохраните бэкап.
+          </p>
+          <div className="button-row">
+            <button type="button" className="secondary-button" onClick={handleExportBackup}>
+              Скачать бэкап
+            </button>
+            <label className="secondary-button" style={{ cursor: 'pointer' }}>
+              Восстановить
+              <input
+                type="file"
+                accept="application/json,.json"
+                hidden
+                onChange={handleImportBackup}
+              />
+            </label>
+          </div>
+        </details>
+        {message && <p className="hint">{message}</p>}
       </div>
     )
   }

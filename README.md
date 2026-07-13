@@ -24,7 +24,25 @@ npm run dev
 - секретные подарки ★ в отдельных главах
 - счёт, выплаты и режим родителя (PIN)
 
-# Дальше
+## Скачать APK
+
+Если GitHub Releases не открывается:
+
+**Зеркало:** https://cdn.jsdelivr.net/gh/SashaSosnova/book@main/public-releases/tom-sawyer.apk
+
+**GitHub:** https://github.com/SashaSosnova/book/releases/latest
+
+## Прогресс и монеты
+
+Хранятся **на устройстве** (localStorage + Capacitor Preferences):
+
+- баланс, пройденные главы, подарки, история выплат
+- обновление контента / новая версия APK с тем же `applicationId` — прогресс **сохраняется**
+- удаление приложения — прогресс **стирается**
+
+Бэкап для родителя: режим родителя → «Бэкап прогресса» → скачать / восстановить JSON.
+
+## Дальше
 
 - Android APK собирается GitHub Actions (workflow `Build Android APK`)
 - Локально: `npm run mobile:sync` (нужны Android Studio / SDK)

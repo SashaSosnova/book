@@ -65,14 +65,32 @@ jobs:
           name: Том Сойер ${{ github.ref_name }}
           body: |
             ## Установка
-            1. Удалите старую версию приложения, если была
-            2. Скачайте **tom-sawyer.apk**
+            1. Удалите старую версию, если была
+            2. Скачайте APK по одной из ссылок ниже
             3. Разрешите установку из неизвестных источников
-            4. Установите APK
 
-            Если снова ошибка — пришлите модель телефона и версию Android.
+            ### Ссылки
+            - GitHub: файл `tom-sawyer.apk` в этом релизе
+            - Зеркало (если GitHub не открывается): https://cdn.jsdelivr.net/gh/SashaSosnova/book@main/public-releases/tom-sawyer.apk
           files: release/tom-sawyer.apk
           generate_release_notes: true
           fail_on_unmatched_files: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update APK mirror in repo
+        if: success() && startsWith(github.ref, 'refs/tags/')
+        run: |
+          cp release/tom-sawyer.apk /tmp/tom-sawyer.apk
+          git fetch origin main
+          git checkout -B main origin/main
+          mkdir -p public-releases
+          cp /tmp/tom-sawyer.apk public-releases/tom-sawyer.apk
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public-releases/tom-sawyer.apk
+          git diff --staged --quiet && echo "No APK mirror changes" && exit 0
+          git commit -m "Update APK mirror for ${{ github.ref_name }}"
+          git push origin main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
