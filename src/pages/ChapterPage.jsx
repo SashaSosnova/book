@@ -244,6 +244,26 @@ export default function ChapterPage() {
         </section>
       )}
 
+      {!completed && !gate && (
+        <section className="panel quest-gate-panel">
+          <h2>{isFinale ? 'Итоговый тест' : 'Тест'}</h2>
+          <p className="hint">
+            {isFinale
+              ? 'Заключение короткое — код из книги не нужен. Можно сразу пройти финальный тест.'
+              : 'Для этой главы код не нужен.'}
+          </p>
+          {quizReady ? (
+            <Link className="primary-button" to={`/chapter/${chapter.id}/quiz`}>
+              {isFinale ? 'Итоговый тест' : 'В бой — к тесту!'}
+            </Link>
+          ) : (
+            <button type="button" className="primary-button" onClick={openQuiz}>
+              {isFinale ? 'Начать итоговый тест' : 'Открыть тест'}
+            </button>
+          )}
+        </section>
+      )}
+
       <YourMoveCard chapter={chapter} />
 
       {isFinale && chapter.reflectionQuestions?.length > 0 && (
