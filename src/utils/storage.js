@@ -170,6 +170,28 @@ export function importBackup(backup) {
   return { ok: true }
 }
 
+/** Полный сброс прогресса ребёнка. PIN родителя не трогаем. */
+export async function resetProgress() {
+  for (const key of ALL_KEYS) {
+    localStorage.removeItem(key)
+    try {
+      await Preferences.remove({ key })
+    } catch {
+      // Web / без плагина
+    }
+  }
+
+  try {
+    sessionStorage.removeItem('tom-sawyer-quiz-access')
+  } catch {
+    // ignore
+  }
+
+  window.dispatchEvent(new Event('tom-sawyer-balance'))
+  window.dispatchEvent(new Event('tom-sawyer-gifts'))
+  return { ok: true }
+}
+
 /**
  * При старте: если localStorage пуст, а в Preferences есть данные — восстанавливаем.
  * Если localStorage есть — копируем в Preferences (на случай первого запуска на устройстве).

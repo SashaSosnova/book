@@ -6,7 +6,7 @@ import {
   subscribeParentMode,
   unlockParentMode,
 } from '../utils/parentMode'
-import { exportBackup, importBackup } from '../utils/storage'
+import { exportBackup, importBackup, resetProgress } from '../utils/storage'
 
 export function useParentMode() {
   return useSyncExternalStore(subscribeParentMode, isParentMode, () => false)
@@ -81,6 +81,15 @@ export function ParentModeToggle() {
     event.target.value = ''
   }
 
+  async function handleResetProgress() {
+    const ok = window.confirm(
+      'Сбросить весь прогресс? Монеты, пройденные главы, подарки и выплаты обнулятся. PIN родителя сохранится.',
+    )
+    if (!ok) return
+    await resetProgress()
+    setMessage('Прогресс сброшен. Можно начинать с чистого листа.')
+  }
+
   if (unlocked) {
     return (
       <div className="parent-mode-bar parent-mode-bar--on">
@@ -105,9 +114,9 @@ export function ParentModeToggle() {
           </form>
         </details>
         <details className="parent-pin-change">
-          <summary>Бэкап прогресса</summary>
+          <summary>Бэкап и сброс</summary>
           <p className="hint">
-            Монеты и пройденные главы хранятся на телефоне. Перед переустановкой сохраните бэкап.
+            Монеты и главы хранятся на этом устройстве. После тестов можно сбросить прогресс для ребёнка.
           </p>
           <div className="button-row">
             <button type="button" className="secondary-button" onClick={handleExportBackup}>
@@ -122,6 +131,9 @@ export function ParentModeToggle() {
                 onChange={handleImportBackup}
               />
             </label>
+            <button type="button" className="secondary-button" onClick={handleResetProgress}>
+              Сбросить прогресс
+            </button>
           </div>
         </details>
         {message && <p className="hint">{message}</p>}
