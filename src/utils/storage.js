@@ -5,6 +5,10 @@ const COMPLETED_KEY = 'tom-sawyer-completed'
 const REFLECTION_KEY = 'tom-sawyer-reflection'
 const PAYOUTS_KEY = 'tom-sawyer-payouts'
 const GIFTS_KEY = 'tom-sawyer-gifts'
+const EARNINGS_KEY = 'tom-sawyer-earnings'
+const STREAK_KEY = 'tom-sawyer-streak'
+const BOOK_BONUS_KEY = 'tom-sawyer-book-bonus'
+const YOUR_MOVE_KEY = 'tom-sawyer-your-move'
 const BACKUP_VERSION = 1
 
 const ALL_KEYS = [
@@ -13,6 +17,10 @@ const ALL_KEYS = [
   REFLECTION_KEY,
   PAYOUTS_KEY,
   GIFTS_KEY,
+  EARNINGS_KEY,
+  STREAK_KEY,
+  BOOK_BONUS_KEY,
+  YOUR_MOVE_KEY,
 ]
 
 function readJson(key, fallback) {
@@ -129,6 +137,65 @@ export function markChapterCompleted(chapterId) {
   return completed
 }
 
+export function getEarningsHistory() {
+  return readJson(EARNINGS_KEY, [])
+}
+
+export function appendEarnings(entries) {
+  if (!entries?.length) return getEarningsHistory()
+  const history = getEarningsHistory()
+  history.unshift(...entries)
+  persist(EARNINGS_KEY, JSON.stringify(history))
+  window.dispatchEvent(new Event('tom-sawyer-earnings'))
+  return history
+}
+
+export function getStreakState() {
+  return readJson(STREAK_KEY, {
+    currentStreak: 0,
+    lastEarnDate: null,
+    claimedMilestones: [],
+  })
+}
+
+export function setStreakState(state) {
+  persist(STREAK_KEY, JSON.stringify(state))
+  window.dispatchEvent(new Event('tom-sawyer-earnings'))
+  return state
+}
+
+export function isBookBonusClaimed() {
+  return localStorage.getItem(BOOK_BONUS_KEY) === '1'
+}
+
+export function markBookBonusClaimed() {
+  persist(BOOK_BONUS_KEY, '1')
+  return true
+}
+
+export function getYourMoveAnswers() {
+  return readJson(YOUR_MOVE_KEY, {})
+}
+
+export function getYourMoveAnswer(chapterId) {
+  const answers = getYourMoveAnswers()
+  const value = answers[String(chapterId)]
+  return value == null ? null : value
+}
+
+/** Сохраняет выбор. Возвращает true, если это первый ответ по главе. */
+export function saveYourMoveAnswer(chapterId, choiceIndex) {
+  const id = String(chapterId)
+  const answers = getYourMoveAnswers()
+  if (answers[id] != null) {
+    return { ok: false, already: true }
+  }
+  answers[id] = Number(choiceIndex)
+  persist(YOUR_MOVE_KEY, JSON.stringify(answers))
+  window.dispatchEvent(new Event('tom-sawyer-your-move'))
+  return { ok: true, already: false }
+}
+
 export function getReflectionAnswers() {
   return readJson(REFLECTION_KEY, {})
 }
@@ -150,6 +217,10 @@ export function exportBackup() {
       [REFLECTION_KEY]: localStorage.getItem(REFLECTION_KEY),
       [PAYOUTS_KEY]: localStorage.getItem(PAYOUTS_KEY),
       [GIFTS_KEY]: localStorage.getItem(GIFTS_KEY),
+      [EARNINGS_KEY]: localStorage.getItem(EARNINGS_KEY),
+      [STREAK_KEY]: localStorage.getItem(STREAK_KEY),
+      [BOOK_BONUS_KEY]: localStorage.getItem(BOOK_BONUS_KEY),
+      [YOUR_MOVE_KEY]: localStorage.getItem(YOUR_MOVE_KEY),
     },
   }
 }
@@ -167,6 +238,7 @@ export function importBackup(backup) {
 
   window.dispatchEvent(new Event('tom-sawyer-balance'))
   window.dispatchEvent(new Event('tom-sawyer-gifts'))
+  window.dispatchEvent(new Event('tom-sawyer-earnings'))
   return { ok: true }
 }
 
@@ -189,6 +261,7 @@ export async function resetProgress() {
 
   window.dispatchEvent(new Event('tom-sawyer-balance'))
   window.dispatchEvent(new Event('tom-sawyer-gifts'))
+  window.dispatchEvent(new Event('tom-sawyer-earnings'))
   return { ok: true }
 }
 
@@ -214,4 +287,5 @@ export async function hydrateStorage() {
 
   window.dispatchEvent(new Event('tom-sawyer-balance'))
   window.dispatchEvent(new Event('tom-sawyer-gifts'))
+  window.dispatchEvent(new Event('tom-sawyer-earnings'))
 }

@@ -4,7 +4,16 @@ import { chaptersPart3 } from './chaptersPart3'
 import { chaptersPart4 } from './chaptersPart4'
 import { finalQuiz } from './finalQuiz'
 
-export { REWARD_PER_ANSWER, MAX_WRONG_ANSWERS, bookMeta, markKinds } from './meta'
+export {
+  BOOK_COMPLETE_BONUS,
+  CHAPTER_REWARD,
+  MAX_WRONG_ANSWERS,
+  PERFECT_BONUS,
+  STREAK_MILESTONES,
+  TIER_LABELS,
+  bookMeta,
+  markKinds,
+} from './meta'
 export { finalQuiz } from './finalQuiz'
 
 export const chapters = [

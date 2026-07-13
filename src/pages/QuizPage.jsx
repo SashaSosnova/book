@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import {
   getChapter,
@@ -6,20 +6,15 @@ import {
   getQuestionExplanation,
   getQuizQuestions,
   MAX_WRONG_ANSWERS,
-  REWARD_PER_ANSWER,
 } from '../data/chapters'
+import { isChapterCompleted } from '../utils/storage'
 import {
-  addToBalance,
-  isChapterCompleted,
-  markChapterCompleted,
-} from '../utils/storage'
-import {
-  canEarnQuizReward,
   getPreviousChapter,
   hasQuizAccess,
   isChapterUnlocked,
   revokeQuizAccess,
 } from '../utils/progress'
+import { claimQuizReward } from '../utils/rewards'
 import { notifyBalanceChanged } from '../components/BalanceBadge'
 import BalanceBadge from '../components/BalanceBadge'
 
@@ -35,7 +30,8 @@ export default function QuizPage() {
   const [results, setResults] = useState([]) // boolean per answered question
   const [finished, setFinished] = useState(false)
   const [passed, setPassed] = useState(false)
-  const [earned, setEarned] = useState(0)
+  const [rewardResult, setRewardResult] = useState(null)
+  const advanceTimerRef = useRef(null)
 
   const question = questions[current] ?? null
   const isFinale = Boolean(chapter?.isFinale)
@@ -47,6 +43,14 @@ export default function QuizPage() {
   const answeredCorrectly = answered && selected === question?.correctIndex
   const correctCount = results.filter(Boolean).length
   const wrongCount = results.length - correctCount
+
+  useEffect(() => {
+    return () => {
+      if (advanceTimerRef.current) {
+        clearTimeout(advanceTimerRef.current)
+      }
+    }
+  }, [])
 
   if (!chapter || questions.length === 0) {
     return (
@@ -120,8 +124,7 @@ export default function QuizPage() {
   }
 
   function finishWithResults(finalResults) {
-    const finalCorrect = finalResults.filter(Boolean).length
-    const finalWrong = finalResults.length - finalCorrect
+    const finalWrong = finalResults.length - finalResults.filter(Boolean).length
     const didPass = finalWrong <= MAX_WRONG_ANSWERS
 
     setPassed(didPass)
@@ -129,42 +132,53 @@ export default function QuizPage() {
 
     if (!didPass) {
       revokeQuizAccess(chapter.id)
-      setEarned(0)
+      setRewardResult(null)
       return
     }
 
-    if (!canEarnQuizReward(chapter.id)) {
-      setEarned(0)
+    const claimed = claimQuizReward(chapter, finalWrong)
+    if (claimed.ok) {
+      notifyBalanceChanged()
+      setRewardResult(claimed)
       return
     }
 
-    markChapterCompleted(chapter.id)
-    const totalEarned = finalCorrect * REWARD_PER_ANSWER
-    addToBalance(totalEarned)
-    notifyBalanceChanged()
-    setEarned(totalEarned)
+    setRewardResult({ ok: false, total: 0 })
+  }
+
+  function goToNext(nextResults) {
+    setResults(nextResults)
+    const isLast = nextResults.length >= questions.length
+    if (isLast) {
+      finishWithResults(nextResults)
+      return
+    }
+    setCurrent((value) => value + 1)
+    setSelected(null)
   }
 
   function handleAnswer(optionIndex) {
     if (selected !== null) return
     setSelected(optionIndex)
+
+    const isCorrect = optionIndex === question.correctIndex
+    if (!isCorrect) return
+
+    const nextResults = [...results, true]
+    advanceTimerRef.current = setTimeout(() => {
+      goToNext(nextResults)
+    }, 700)
   }
 
   function handleContinue() {
     if (selected === null) return
-
-    const isCorrect = selected === question.correctIndex
-    const nextResults = [...results, isCorrect]
-    setResults(nextResults)
-
-    const isLast = current >= questions.length - 1
-    if (isLast) {
-      finishWithResults(nextResults)
-      return
+    if (advanceTimerRef.current) {
+      clearTimeout(advanceTimerRef.current)
+      advanceTimerRef.current = null
     }
 
-    setCurrent((value) => value + 1)
-    setSelected(null)
+    const isCorrect = selected === question.correctIndex
+    goToNext([...results, isCorrect])
   }
 
   if (finished) {
@@ -207,6 +221,12 @@ export default function QuizPage() {
       )
     }
 
+    const chapterReward = rewardResult?.chapterReward
+    const streakBonuses = rewardResult?.streakBonuses ?? []
+    const bookBonus = rewardResult?.bookBonus ?? 0
+    const nextMilestone = rewardResult?.streak?.nextMilestone
+    const currentStreak = rewardResult?.streak?.currentStreak ?? 0
+
     return (
       <div className="page quiz-page">
         <header className="page-header">
@@ -227,10 +247,60 @@ export default function QuizPage() {
           {wrongCount > 0 && (
             <p className="hint">Ошибок: {wrongCount} (это ещё нормально)</p>
           )}
-          <p className="result-earned">
-            Заработано сейчас: <strong>+{earned} ₽</strong>
+
+          {chapterReward && (
+            <ul className="reward-breakdown reward-breakdown--animate">
+              <li style={{ '--i': 0 }}>
+                <span>Глава ({chapterReward.tierLabel})</span>
+                <strong>+{chapterReward.base} ₽</strong>
+              </li>
+              {chapterReward.perfect > 0 && (
+                <li style={{ '--i': 1 }}>
+                  <span>Идеал без ошибок</span>
+                  <strong>+{chapterReward.perfect} ₽</strong>
+                </li>
+              )}
+              {streakBonuses.map((bonus, index) => (
+                <li key={bonus.days} style={{ '--i': 2 + index }}>
+                  <span>Серия {bonus.days} дн.</span>
+                  <strong>+{bonus.bonus} ₽</strong>
+                </li>
+              ))}
+              {bookBonus > 0 && (
+                <li style={{ '--i': 2 + streakBonuses.length }}>
+                  <span>Вся книга</span>
+                  <strong>+{bookBonus} ₽</strong>
+                </li>
+              )}
+            </ul>
+          )}
+
+          <p className="result-earned coin-pop">
+            Заработано сейчас:{' '}
+            <strong>+{rewardResult?.total ?? 0} ₽</strong>
           </p>
-          <p className="hint">За каждый верный ответ — {REWARD_PER_ANSWER} ₽.</p>
+
+          {nextMilestone ? (
+            <p className="hint streak-hint">
+              <span className="streak-fire" aria-hidden="true">
+                🔥
+              </span>{' '}
+              Серия: {currentStreak}/{nextMilestone.days}{' '}
+              {currentStreak >= nextMilestone.days - 1
+                ? `— ещё день до бонуса +${nextMilestone.bonus} ₽`
+                : `— до бонуса +${nextMilestone.bonus} ₽`}
+            </p>
+          ) : (
+            currentStreak > 0 && (
+              <p className="hint streak-hint">
+                <span className="streak-fire" aria-hidden="true">
+                  🔥
+                </span>{' '}
+                Серия {currentStreak} дн. — все ступени этой серии уже получены!
+              </p>
+            )
+          )}
+
           <p className="hint">Эту главу больше нельзя пройти за монеты.</p>
           {isFinale && (
             <p className="hint">Ты прошёл большой тест по всей книге — отличная работа!</p>
@@ -243,6 +313,9 @@ export default function QuizPage() {
           </Link>
           <Link className="secondary-button" to={`/chapter/${chapter.id}`}>
             {isFinale ? 'Назад к заключению' : 'К фактам главы'}
+          </Link>
+          <Link className="secondary-button" to="/rewards">
+            К наградам
           </Link>
         </div>
       </div>
@@ -299,19 +372,15 @@ export default function QuizPage() {
               {answeredCorrectly ? 'Верно!' : 'Неверно'}
             </p>
             {!answeredCorrectly && (
-              <p className="answer-feedback__text">
-                {getQuestionExplanation(question)}
-              </p>
+              <>
+                <p className="answer-feedback__text">
+                  {getQuestionExplanation(question)}
+                </p>
+                <button type="button" className="primary-button" onClick={handleContinue}>
+                  {current >= questions.length - 1 ? 'Завершить' : 'Дальше'}
+                </button>
+              </>
             )}
-            {answeredCorrectly && (
-              <p className="answer-feedback__text">
-                {question.explanation ??
-                  `Да: «${question.options[question.correctIndex]}».`}
-              </p>
-            )}
-            <button type="button" className="primary-button" onClick={handleContinue}>
-              {current >= questions.length - 1 ? 'Завершить' : 'Дальше'}
-            </button>
           </div>
         )}
       </section>

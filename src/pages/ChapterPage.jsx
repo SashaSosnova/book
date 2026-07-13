@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { getChapter, getChapterLabel, markKinds } from '../data/chapters'
+import { getChapterIcon } from '../data/chapterIcons'
 import { getGiftByChapterId } from '../data/gifts'
 import {
   getReflectionAnswers,
@@ -14,13 +15,21 @@ import {
   hasQuizAccess,
   isChapterUnlocked,
 } from '../utils/progress'
+import {
+  getChapterHook,
+  getCoolFact,
+  getFunMarks,
+  getWordLoot,
+} from '../utils/chapterDisplay'
 import { checkQuizGate, getQuizGate } from '../utils/quizGates'
 import BalanceBadge from '../components/BalanceBadge'
 import GiftClaimCard from '../components/GiftClaimCard'
+import YourMoveCard from '../components/YourMoveCard'
 import { ParentOnly, useParentMode } from '../components/ParentMode'
 
 export default function ChapterPage() {
   const { id } = useParams()
+  const navigate = useNavigate()
   const parentMode = useParentMode()
   const chapter = getChapter(id)
   const [reflectionAnswers, setReflectionAnswers] = useState(() =>
@@ -46,6 +55,11 @@ export default function ChapterPage() {
   const previous = getPreviousChapter(chapter.id)
   const gate = getQuizGate(chapter.id)
   const chapterGift = getGiftByChapterId(chapter.id)
+  const hook = getChapterHook(chapter)
+  const coolFact = getCoolFact(chapter)
+  const wordLoot = getWordLoot(chapter)
+  const funMarks = getFunMarks(chapter)
+  const icon = getChapterIcon(chapter)
 
   if (!unlocked) {
     return (
@@ -81,15 +95,25 @@ export default function ChapterPage() {
     setReflectionAnswers(getReflectionAnswers())
   }
 
+  function openQuiz() {
+    grantQuizAccess(chapter.id)
+    setQuizReady(true)
+    navigate(`/chapter/${chapter.id}/quiz`)
+  }
+
   function handleUnlockQuiz(event) {
     event.preventDefault()
     setGateError(null)
     if (!checkQuizGate(chapter.id, gateInput)) {
-      setGateError('Не то слово. Найди в книге метку 🔑 и посмотри слово рядом.')
+      setGateError('Не тот код. Найди в книге метку 🔑 и слово рядом с ней.')
       return
     }
-    grantQuizAccess(chapter.id)
-    setQuizReady(true)
+    openQuiz()
+  }
+
+  function handleParentUnlock() {
+    setGateError(null)
+    openQuiz()
   }
 
   return (
@@ -99,7 +123,12 @@ export default function ChapterPage() {
           <Link className="back-link" to="/">
             ← Оглавление
           </Link>
-          <p className="eyebrow">{getChapterLabel(chapter)}</p>
+          <p className="eyebrow">
+            <span className="chapter-emoji" aria-hidden="true">
+              {icon}
+            </span>{' '}
+            {getChapterLabel(chapter)}
+          </p>
           <h1>{chapter.title}</h1>
         </div>
         <BalanceBadge />
@@ -108,40 +137,37 @@ export default function ChapterPage() {
       {completed && (
         <section className="panel panel--muted">
           <p>
-            <strong>Тест уже пройден.</strong> Монеты за эту главу больше не начисляются.
+            <strong>Уровень пройден.</strong> Монеты за эту главу уже начислены.
           </p>
         </section>
       )}
 
       {chapter.previousChapterSummary && (
-        <section className="panel panel--muted">
-          <h2>Коротко о прошлой главе</h2>
+        <details className="panel panel--muted recap-details">
+          <summary>Что было раньше</summary>
           <p>{chapter.previousChapterSummary}</p>
+        </details>
+      )}
+
+      {hook && (
+        <section className="panel chapter-hook">
+          <p className="chapter-hook__text">{hook}</p>
         </section>
       )}
 
-      <section className="panel">
-        <h2>Главная мысль</h2>
-        <p>{chapter.mainIdea}</p>
-      </section>
-
-      <section className="panel">
-        <h2>Интересные факты</h2>
-        <ul className="fact-list">
-          {chapter.facts.map((fact) => (
-            <li key={fact}>{fact}</li>
-          ))}
-        </ul>
-      </section>
-
-      {chapter.vocabulary?.length > 0 && (
+      {coolFact && (
         <section className="panel">
-          <h2>Интересные словосочетания</h2>
-          <p className="hint">
-            Живые обороты из главы — их можно отметить маркером в книге и запомнить.
-          </p>
+          <h2>Крутой факт</h2>
+          <p>{coolFact}</p>
+        </section>
+      )}
+
+      {wordLoot.length > 0 && (
+        <section className="panel">
+          <h2>Слова-лут</h2>
+          <p className="hint">Крутые обороты из главы — можно отметить в книге.</p>
           <dl className="vocab-list">
-            {chapter.vocabulary.map((item) => (
+            {wordLoot.map((item) => (
               <div className="vocab-item" key={item.word}>
                 <dt>{item.word}</dt>
                 <dd>{item.meaning}</dd>
@@ -151,53 +177,104 @@ export default function ChapterPage() {
         </section>
       )}
 
-      {chapter.thinkQuestion && (
-        <section className="panel think-panel">
-          <h2>Подумай</h2>
-          <p className="hint">Тут нет «правильного» ответа — просто порассуждай (можно вслух с мамой или папой).</p>
-          <p className="think-question">{chapter.thinkQuestion}</p>
+      {funMarks.length > 0 && (
+        <section className="panel">
+          <h2>Где искать приколы</h2>
+          <ul className="fact-list">
+            {funMarks.map((item) => (
+              <li key={item.text}>
+                {item.kind === 'funny' ? '😄' : '💡'} {item.text}
+              </li>
+            ))}
+          </ul>
         </section>
       )}
 
       {chapterGift && (
         <section className="panel">
-          <h2>Секретный подарок этой главы</h2>
+          <h2>Секретный подарок</h2>
           <p className="hint">
-            В этой главе спрятана метка {chapterGift.mark}. Найди её в книге и открой подарок.
+            В этой главе спрятана метка {chapterGift.mark}. Найди её в книге.
           </p>
           <GiftClaimCard gift={chapterGift} compact />
         </section>
       )}
 
-      {isFinale && chapter.reflectionQuestions?.length > 0 && (
-        <section className="panel reflection-panel">
-          <h2>Подумай и ответь</h2>
-          <p className="hint">
-            Тут нет «правильного» ответа. Напиши своими словами — можно обсудить с мамой или папой.
-          </p>
-          <div className="reflection-list">
-            {chapter.reflectionQuestions.map((question, index) => (
-              <label className="reflection-item" key={question}>
-                <span className="reflection-item__q">
-                  {index + 1}. {question}
-                </span>
-                <textarea
-                  rows={3}
-                  value={reflectionAnswers[index] ?? ''}
-                  onChange={(event) =>
-                    handleReflectionChange(index, event.target.value)
-                  }
-                  placeholder="Напиши свой ответ…"
+      {!completed && gate && (
+        <section className="panel quest-gate-panel">
+          {quizReady ? (
+            <>
+              <h2>Код принят!</h2>
+              <p className="hint">Можно запускать уровень.</p>
+              <Link className="primary-button" to={`/chapter/${chapter.id}/quiz`}>
+                {isFinale ? 'Итоговый тест' : 'В бой — к тесту!'}
+              </Link>
+            </>
+          ) : (
+            <>
+              <h2>Код сокровища 🔑</h2>
+              <p className="hint">
+                Открой книгу → найди метку <strong>🔑</strong> в этой главе → введи слово
+                рядом. Это твой лут за чтение!
+              </p>
+              <form className="gate-form" onSubmit={handleUnlockQuiz}>
+                <input
+                  type="text"
+                  value={gateInput}
+                  onChange={(event) => setGateInput(event.target.value)}
+                  placeholder="Секретный код из книги"
+                  autoComplete="off"
                 />
-              </label>
-            ))}
-          </div>
+                <button type="submit" className="primary-button">
+                  Открыть тест
+                </button>
+              </form>
+              {gateError && <p className="gate-error">{gateError}</p>}
+              <ParentOnly>
+                <button
+                  type="button"
+                  className="secondary-button parent-unlock-btn"
+                  onClick={handleParentUnlock}
+                >
+                  Открыть тест без кода (родитель)
+                </button>
+              </ParentOnly>
+            </>
+          )}
         </section>
       )}
 
-      {chapter.markInBook?.length > 0 && (
+      <YourMoveCard chapter={chapter} />
+
+      {isFinale && chapter.reflectionQuestions?.length > 0 && (
         <ParentOnly>
-          <details className="panel parent-panel" open>
+          <section className="panel reflection-panel">
+            <h2>Для родителя: обсудить вслух</h2>
+            <p className="hint">Можно спросить после книги — без оценки «правильно/нет».</p>
+            <div className="reflection-list">
+              {chapter.reflectionQuestions.map((question, index) => (
+                <label className="reflection-item" key={question}>
+                  <span className="reflection-item__q">
+                    {index + 1}. {question}
+                  </span>
+                  <textarea
+                    rows={3}
+                    value={reflectionAnswers[index] ?? ''}
+                    onChange={(event) =>
+                      handleReflectionChange(index, event.target.value)
+                    }
+                    placeholder="Заметки родителя (по желанию)…"
+                  />
+                </label>
+              ))}
+            </div>
+          </section>
+        </ParentOnly>
+      )}
+
+      {(chapter.markInBook?.length > 0 || chapter.vocabulary?.length > 0) && (
+        <ParentOnly>
+          <details className="panel parent-panel">
             <summary>Для родителя: что отметить маркером</summary>
             <div className="mark-groups">
               {chapter.vocabulary?.length > 0 && (
@@ -213,7 +290,9 @@ export default function ChapterPage() {
                 </div>
               )}
               {['funny', 'thought'].map((kind) => {
-                const items = chapter.markInBook.filter((item) => item.kind === kind)
+                const items = (chapter.markInBook ?? []).filter(
+                  (item) => item.kind === kind,
+                )
                 if (items.length === 0) return null
                 return (
                   <div key={kind}>
@@ -233,7 +312,7 @@ export default function ChapterPage() {
 
       {chapterGift && (
         <ParentOnly>
-          <details className="panel parent-panel" open>
+          <details className="panel parent-panel">
             <summary>Для родителя: подарок {chapterGift.mark}</summary>
             <p>
               {chapterGift.parentWhere}
@@ -248,44 +327,20 @@ export default function ChapterPage() {
 
       {gate && !completed && (
         <ParentOnly>
-          <details className="panel parent-panel" open>
-            <summary>Для родителя: ключ к тесту 🔑</summary>
+          <details className="panel parent-panel">
+            <summary>Для родителя: код 🔑</summary>
             <p>
               Поставь в книге метку <strong>🔑</strong>: {gate.where}.
               <br />
-              Кодовое слово (ребёнку в приложении не показываем):{' '}
+              Кодовое слово:{' '}
               <strong>«{gate.secret}»</strong>
             </p>
           </details>
         </ParentOnly>
       )}
 
-      {completed ? (
+      {completed && (
         <p className="hint locked-hint">Повторно пройти тест за монеты нельзя.</p>
-      ) : quizReady ? (
-        <Link className="primary-button" to={`/chapter/${chapter.id}/quiz`}>
-          {isFinale ? 'Пройти итоговый тест' : 'Пройти тест'}
-        </Link>
-      ) : (
-        <section className="panel">
-          <h2>Открыть тест</h2>
-          <p className="hint">
-            Найди в книге метку <strong>🔑</strong> и введи слово рядом с ней. Так мы знаем, что глава правда прочитана.
-          </p>
-          <form className="gate-form" onSubmit={handleUnlockQuiz}>
-            <input
-              type="text"
-              value={gateInput}
-              onChange={(event) => setGateInput(event.target.value)}
-              placeholder="Ключевое слово из книги"
-              autoComplete="off"
-            />
-            <button type="submit" className="primary-button">
-              Открыть тест
-            </button>
-          </form>
-          {gateError && <p className="gate-error">{gateError}</p>}
-        </section>
       )}
 
       {!canEarn && !completed && (

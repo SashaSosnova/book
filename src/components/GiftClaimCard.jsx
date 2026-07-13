@@ -56,11 +56,16 @@ export default function GiftClaimCard({ gift, compact = false }) {
     return (
       <article className="gift-card gift-card--locked">
         <div className="gift-card__head">
-          <span className="gift-card__mark">🔒</span>
+          <span className="gift-card__mystery" aria-hidden="true">
+            ?
+          </span>
           <div>
             <h3>Секретный подарок</h3>
             <p className="hint">Откроется в главе {gift.chapterId}</p>
           </div>
+        </div>
+        <div className="gift-silhouette" aria-hidden="true">
+          <span className="gift-silhouette__shape" />
         </div>
       </article>
     )
@@ -69,9 +74,9 @@ export default function GiftClaimCard({ gift, compact = false }) {
   return (
     <article className={`gift-card ${collected ? 'gift-card--collected' : ''}`}>
       <div className="gift-card__head">
-        <span className="gift-card__mark">{gift.mark}</span>
+        <span className="gift-card__mark">{collected ? gift.mark : '★?'}</span>
         <div>
-          <h3>{gift.title}</h3>
+          <h3>{collected ? gift.title : 'Загадочный лут'}</h3>
           {!compact && (
             <p className="hint">
               Глава {gift.chapterId}. {gift.chapterTitle}
@@ -82,9 +87,16 @@ export default function GiftClaimCard({ gift, compact = false }) {
       </div>
 
       {collected ? (
-        <p className="gift-card__reward">Подарок: {gift.rewardIdea}</p>
+        <>
+          <p className="gift-card__reward gift-card__reward--reveal">
+            Подарок: {gift.rewardIdea}
+          </p>
+        </>
       ) : (
         <>
+          <div className="gift-silhouette gift-silhouette--active" aria-hidden="true">
+            <span className="gift-silhouette__shape" />
+          </div>
           <p>{gift.hint}</p>
           <div className="gift-claim">
             <input
@@ -92,7 +104,7 @@ export default function GiftClaimCard({ gift, compact = false }) {
               value={secret}
               onChange={(event) => setSecret(event.target.value)}
               placeholder="Кодовое слово из книги"
-              aria-label={`Код для ${gift.title}`}
+              aria-label={`Код для подарка ${gift.mark}`}
               autoComplete="off"
             />
             <button type="button" className="secondary-button" onClick={handleCollect}>
