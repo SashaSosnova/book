@@ -3,8 +3,11 @@ import { bookMeta, chapters, getChapterLabel } from '../data/chapters'
 import { isChapterCompleted } from '../utils/storage'
 import { isChapterUnlocked } from '../utils/progress'
 import BalanceBadge from '../components/BalanceBadge'
+import { useParentMode } from '../components/ParentMode'
 
 export default function Home() {
+  const parentMode = useParentMode()
+
   return (
     <div className="page home-page">
       <header className="page-header">
@@ -21,7 +24,9 @@ export default function Home() {
       <section className="panel">
         <h2>Оглавление</h2>
         <p className="hint">
-          Главы открываются по порядку: прочитал → нашёл ключ 🔑 → прошёл тест → открылась следующая.
+          {parentMode
+            ? 'Режим родителя: все главы открыты — можно подготовить книгу. Для ребёнка снова будет порядок по тестам.'
+            : 'Главы открываются по порядку: прочитал → нашёл ключ 🔑 → прошёл тест → открылась следующая.'}
         </p>
         <ol className="chapter-list">
           {chapters.map((chapter) => {

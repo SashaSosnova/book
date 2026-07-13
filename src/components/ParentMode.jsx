@@ -84,7 +84,7 @@ export function ParentModeToggle() {
   if (unlocked) {
     return (
       <div className="parent-mode-bar parent-mode-bar--on">
-        <span>Режим родителя включён</span>
+        <span>Режим родителя: все главы открыты</span>
         <button type="button" className="text-button" onClick={() => lockParentMode()}>
           Выйти
         </button>

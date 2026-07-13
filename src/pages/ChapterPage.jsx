@@ -17,10 +17,11 @@ import {
 import { checkQuizGate, getQuizGate } from '../utils/quizGates'
 import BalanceBadge from '../components/BalanceBadge'
 import GiftClaimCard from '../components/GiftClaimCard'
-import { ParentOnly } from '../components/ParentMode'
+import { ParentOnly, useParentMode } from '../components/ParentMode'
 
 export default function ChapterPage() {
   const { id } = useParams()
+  const parentMode = useParentMode()
   const chapter = getChapter(id)
   const [reflectionAnswers, setReflectionAnswers] = useState(() =>
     getReflectionAnswers(),
@@ -38,7 +39,7 @@ export default function ChapterPage() {
     )
   }
 
-  const unlocked = isChapterUnlocked(chapter.id)
+  const unlocked = isChapterUnlocked(chapter.id) || parentMode
   const completed = isChapterCompleted(chapter.id)
   const canEarn = canEarnQuizReward(chapter.id)
   const isFinale = Boolean(chapter.isFinale)

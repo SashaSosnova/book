@@ -1,6 +1,6 @@
 import { useMemo, useState, useSyncExternalStore } from 'react'
 import { Link } from 'react-router-dom'
-import { gifts } from '../data/gifts'
+import { finaleReward, gifts } from '../data/gifts'
 import {
   getBalance,
   getCollectedGifts,
@@ -124,6 +124,12 @@ export default function RewardsPage() {
                   {isGiftAvailable(gift) ? 'доступен' : 'ещё закрыт'}
                 </li>
               ))}
+              <li>
+                <strong>Финал</strong> — глава {finaleReward.chapterId}.{' '}
+                {finaleReward.chapterTitle}: без звёздочки в книге.
+                <br />
+                {finaleReward.rewardIdea}
+              </li>
             </ul>
           </details>
         </ParentOnly>
