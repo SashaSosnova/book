@@ -51,6 +51,31 @@ jobs:
           mkdir -p release
           cp android/app/build/outputs/apk/release/app-release.apk release/tom-sawyer.apk
           ls -lh release/tom-sawyer.apk
+          # Fail CI if APK lacks a real signing block / cert (guards against unsigned builds)
+          python3 - <<'PY'
+          import struct, zipfile, sys
+          path = 'release/tom-sawyer.apk'
+          data = open(path, 'rb').read()
+          eocd = data.rfind(b'PK\x05\x06')
+          cd = struct.unpack_from('<I', data, eocd + 16)[0]
+          if data[cd-16:cd] != b'APK Sig Block 42':
+              sys.exit('Missing APK Signing Block')
+          size = struct.unpack_from('<Q', data, cd - 24)[0]
+          block_start = cd - 8 - size
+          pos, end = block_start + 8, cd - 24
+          ids = []
+          while pos + 12 <= end:
+              pair_len = struct.unpack_from('<Q', data, pos)[0]
+              id_ = struct.unpack_from('<I', data, pos + 8)[0]
+              ids.append(id_)
+              pos += 8 + pair_len
+          print('sig block ids:', [hex(i) for i in ids])
+          if 0x7109871a not in ids:
+              sys.exit('Missing APK Signature Scheme v2')
+          with zipfile.ZipFile(path) as z:
+              print('entries', len(z.namelist()), 'has classes.dex', 'classes.dex' in z.namelist())
+          print('APK signing OK')
+          PY
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
@@ -65,13 +90,14 @@ jobs:
           name: Том Сойер ${{ github.ref_name }}
           body: |
             ## Установка
-            1. Удалите старую версию, если была
-            2. Скачайте APK по одной из ссылок ниже
+            1. **Обязательно удалите** старую версию приложения (предыдущие APK были подписаны разными ключами CI)
+            2. Скачайте `tom-sawyer.apk` из этого релиза
             3. Разрешите установку из неизвестных источников
+            4. Установите APK
 
-            ### Ссылки
+            ### Зеркало
             - GitHub: файл `tom-sawyer.apk` в этом релизе
-            - Зеркало (если GitHub не открывается): https://cdn.jsdelivr.net/gh/SashaSosnova/book@main/public-releases/tom-sawyer.apk
+            - Запасной: https://cdn.jsdelivr.net/gh/SashaSosnova/book@main/public-releases/tom-sawyer.apk
           files: release/tom-sawyer.apk
           generate_release_notes: true
           fail_on_unmatched_files: true
@@ -90,7 +116,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add public-releases/tom-sawyer.apk
           git diff --staged --quiet && echo "No APK mirror changes" && exit 0
-          git commit -m "Update APK mirror for ${{ github.ref_name }}"
+          git commit --trailer "Co-authored-by: Cursor <cursoragent@cursor.com>" -m "Update APK mirror for ${{ github.ref_name }}"
           git push origin main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
