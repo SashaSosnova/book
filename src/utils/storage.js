@@ -26,7 +26,19 @@ const ALL_KEYS = [
 function readJson(key, fallback) {
   try {
     const raw = localStorage.getItem(key)
-    return raw ? JSON.parse(raw) : fallback
+    if (raw == null || raw === '') return fallback
+    const parsed = JSON.parse(raw)
+    if (parsed == null) return fallback
+    if (Array.isArray(fallback) && !Array.isArray(parsed)) return fallback
+    if (
+      fallback &&
+      typeof fallback === 'object' &&
+      !Array.isArray(fallback) &&
+      (typeof parsed !== 'object' || Array.isArray(parsed))
+    ) {
+      return fallback
+    }
+    return parsed
   } catch {
     return fallback
   }
@@ -271,18 +283,27 @@ export async function resetProgress() {
  */
 export async function hydrateStorage() {
   try {
-    for (const key of ALL_KEYS) {
-      const localValue = localStorage.getItem(key)
-      const native = await Preferences.get({ key })
+    const hydrate = (async () => {
+      for (const key of ALL_KEYS) {
+        const localValue = localStorage.getItem(key)
+        const native = await Preferences.get({ key })
 
-      if ((localValue == null || localValue === '') && native.value) {
-        writeLocal(key, native.value)
-      } else if (localValue != null && localValue !== '') {
-        await Preferences.set({ key, value: localValue })
+        if ((localValue == null || localValue === '') && native.value) {
+          writeLocal(key, native.value)
+        } else if (localValue != null && localValue !== '') {
+          await Preferences.set({ key, value: localValue })
+        }
       }
-    }
+    })()
+
+    await Promise.race([
+      hydrate,
+      new Promise((resolve) => {
+        setTimeout(resolve, 800)
+      }),
+    ])
   } catch {
-    // Web / без плагина
+    // Web / без плагина / таймаут — ок, стартуем с localStorage
   }
 
   window.dispatchEvent(new Event('tom-sawyer-balance'))

@@ -76,26 +76,53 @@ export default function RewardsPage() {
     isBookBonusClaimed,
     () => false,
   )
-  const streak = useSyncExternalStore(subscribe, getStreakProgress, () => ({
-    currentStreak: 0,
-    nextMilestone: STREAK_MILESTONES[0],
-    earnedToday: false,
-  }))
-  const earnings = useSyncExternalStore(subscribe, getEarningsHistory, () => [])
+  // Строковые снимки: getStreakProgress/getEarningsHistory каждый раз отдают новый объект/массив,
+  // из‑за этого useSyncExternalStore уходит в бесконечный ререндер и страница становится пустой.
+  const streakKey = useSyncExternalStore(
+    subscribe,
+    () => JSON.stringify(getStreakProgress()),
+    () => '',
+  )
+  const earningsKey = useSyncExternalStore(
+    subscribe,
+    () => JSON.stringify(getEarningsHistory()),
+    () => '[]',
+  )
+
+  const streak = useMemo(() => {
+    try {
+      return streakKey ? JSON.parse(streakKey) : getStreakProgress()
+    } catch {
+      return getStreakProgress()
+    }
+  }, [streakKey])
+
+  const earnings = useMemo(() => {
+    try {
+      const parsed = earningsKey ? JSON.parse(earningsKey) : []
+      return Array.isArray(parsed) ? parsed : []
+    } catch {
+      return []
+    }
+  }, [earningsKey])
 
   const [tab, setTab] = useState('piggy')
   const [amount, setAmount] = useState('')
   const [message, setMessage] = useState(null)
   const [historyVersion, setHistoryVersion] = useState(0)
 
-  const history = useMemo(() => getPayoutHistory(), [historyVersion, balance])
+  const history = useMemo(() => {
+    const items = getPayoutHistory()
+    return Array.isArray(items) ? items : []
+  }, [historyVersion, balance])
   const totalPaid = useMemo(() => getTotalPaid(), [historyVersion, balance])
   const budget = useMemo(() => estimateMaxBookEarnings(), [])
 
-  const nextMilestone = streak.nextMilestone ?? STREAK_MILESTONES[STREAK_MILESTONES.length - 1]
+  const nextMilestone =
+    streak.nextMilestone ?? STREAK_MILESTONES[STREAK_MILESTONES.length - 1]
   const dots = streakDots(
-    Math.min(streak.currentStreak, nextMilestone.days),
-    nextMilestone.days,
+    Math.min(streak.currentStreak || 0, nextMilestone?.days || 1),
+    nextMilestone?.days || STREAK_MILESTONES[0].days,
   )
 
   function refreshAfterPayout(result) {

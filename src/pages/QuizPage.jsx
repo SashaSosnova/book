@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { flushSync } from 'react-dom'
 import { Link, useParams } from 'react-router-dom'
 import {
   getChapter,
@@ -31,18 +32,24 @@ export default function QuizPage() {
   const [finished, setFinished] = useState(false)
   const [passed, setPassed] = useState(false)
   const [rewardResult, setRewardResult] = useState(null)
+  // Фиксируем «уже пройдено» только на входе: после claim localStorage сразу completed,
+  // и свежий isChapterCompleted() иначе перекрывает экран с расшифровкой монет.
+  const [alreadyDoneOnEntry] = useState(() =>
+    id != null ? isChapterCompleted(id) : false,
+  )
   const advanceTimerRef = useRef(null)
+  const finishingRef = useRef(false)
 
   const question = questions[current] ?? null
   const isFinale = Boolean(chapter?.isFinale)
   const unlocked = chapter ? isChapterUnlocked(chapter.id) : false
-  const completed = chapter ? isChapterCompleted(chapter.id) : false
   const accessGranted = chapter ? hasQuizAccess(chapter.id) : false
   const previous = chapter ? getPreviousChapter(chapter.id) : null
   const answered = selected !== null
   const answeredCorrectly = answered && selected === question?.correctIndex
   const correctCount = results.filter(Boolean).length
   const wrongCount = results.length - correctCount
+  const showResultScreen = finished || finishingRef.current
 
   useEffect(() => {
     return () => {
@@ -81,7 +88,7 @@ export default function QuizPage() {
     )
   }
 
-  if (completed) {
+  if (alreadyDoneOnEntry && !showResultScreen) {
     return (
       <div className="page">
         <header className="page-header">
@@ -106,7 +113,7 @@ export default function QuizPage() {
     )
   }
 
-  if (!accessGranted && !finished) {
+  if (!accessGranted && !showResultScreen) {
     return (
       <div className="page">
         <header className="page-header">
@@ -127,8 +134,12 @@ export default function QuizPage() {
     const finalWrong = finalResults.length - finalResults.filter(Boolean).length
     const didPass = finalWrong <= MAX_WRONG_ANSWERS
 
-    setPassed(didPass)
-    setFinished(true)
+    finishingRef.current = true
+    flushSync(() => {
+      setPassed(didPass)
+      setFinished(true)
+      setResults(finalResults)
+    })
 
     if (!didPass) {
       revokeQuizAccess(chapter.id)
@@ -138,8 +149,8 @@ export default function QuizPage() {
 
     const claimed = claimQuizReward(chapter, finalWrong)
     if (claimed.ok) {
-      notifyBalanceChanged()
       setRewardResult(claimed)
+      queueMicrotask(() => notifyBalanceChanged())
       return
     }
 
@@ -181,7 +192,7 @@ export default function QuizPage() {
     goToNext([...results, isCorrect])
   }
 
-  if (finished) {
+  if (showResultScreen) {
     if (!passed) {
       return (
         <div className="page quiz-page">

@@ -25,7 +25,7 @@ export default function Home() {
       <div className="home-hero" aria-hidden="true">
         <img
           className="home-hero__img"
-          src="/tom-hero.png"
+          src={`${import.meta.env.BASE_URL}tom-hero.png`}
           alt=""
           width={800}
           height={450}

@@ -5,7 +5,11 @@ import App from './App.jsx'
 import { hydrateStorage } from './utils/storage'
 
 async function boot() {
-  await hydrateStorage()
+  try {
+    await hydrateStorage()
+  } catch (error) {
+    console.warn('hydrateStorage failed', error)
+  }
   createRoot(document.getElementById('root')).render(
     <StrictMode>
       <App />
