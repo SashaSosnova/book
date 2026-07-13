@@ -44,19 +44,13 @@ jobs:
         working-directory: android
         run: |
           chmod +x gradlew
-          # Debug APK — самый надёжный вариант для установки без Play Store
-          ./gradlew assembleDebug assembleRelease --no-daemon
+          ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Prepare artifact
         run: |
           mkdir -p release
-          # Основной файл для установки — debug (стабильно ставится на телефоны)
           cp android/app/build/outputs/apk/debug/app-debug.apk release/tom-sawyer.apk
-          if [ -f android/app/build/outputs/apk/release/app-release.apk ]; then
-            cp android/app/build/outputs/apk/release/app-release.apk release/tom-sawyer-release.apk
-          fi
           ls -lh release/
-          # Проверка zip-структуры
           python3 - <<'PY'
           import zipfile
           z = zipfile.ZipFile('release/tom-sawyer.apk')
@@ -86,10 +80,8 @@ jobs:
             4. Откройте APK и установите
 
             Если снова пишет «приложение не установлено» — напишите модель телефона и версию Android.
-          files: |
-            release/tom-sawyer.apk
-            release/tom-sawyer-release.apk
+          files: release/tom-sawyer.apk
           generate_release_notes: true
-          fail_on_unmatched_files: false
+          fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
