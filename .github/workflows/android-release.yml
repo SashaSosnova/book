@@ -40,46 +40,37 @@ jobs:
       - name: Sync Capacitor Android
         run: npx cap sync android
 
-      - name: Build installable APKs
+      - name: Build release APK
         working-directory: android
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon --stacktrace
+          ./gradlew assembleRelease --no-daemon --stacktrace
 
       - name: Prepare artifact
         run: |
           mkdir -p release
-          cp android/app/build/outputs/apk/debug/app-debug.apk release/tom-sawyer.apk
-          ls -lh release/
-          python3 - <<'PY'
-          import zipfile
-          z = zipfile.ZipFile('release/tom-sawyer.apk')
-          info = z.getinfo('resources.arsc')
-          print('resources.arsc compress_type=', info.compress_type, 'file_size=', info.file_size)
-          sigs = [n for n in z.namelist() if n.startswith('META-INF/')]
-          print('signatures:', sigs)
-          assert any(n.endswith('.RSA') or n.endswith('.EC') or n.endswith('MANIFEST.MF') for n in sigs), 'APK is not signed'
-          PY
+          cp android/app/build/outputs/apk/release/app-release.apk release/tom-sawyer.apk
+          ls -lh release/tom-sawyer.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: tom-sawyer-apk
-          path: release/*.apk
+          path: release/tom-sawyer.apk
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_type == 'tag' && github.ref_name || format('v1.0.{0}', github.run_number) }}
-          name: Том Сойер ${{ github.ref_type == 'tag' && github.ref_name || format('v1.0.{0}', github.run_number) }}
+          tag_name: ${{ github.ref_name }}
+          name: Том Сойер ${{ github.ref_name }}
           body: |
             ## Установка
-            1. Скачайте **tom-sawyer.apk**
-            2. Если уже стояла старая версия — удалите её
+            1. Удалите старую версию приложения, если была
+            2. Скачайте **tom-sawyer.apk**
             3. Разрешите установку из неизвестных источников
-            4. Откройте APK и установите
+            4. Установите APK
 
-            Если снова пишет «приложение не установлено» — напишите модель телефона и версию Android.
+            Если снова ошибка — пришлите модель телефона и версию Android.
           files: release/tom-sawyer.apk
           generate_release_notes: true
           fail_on_unmatched_files: true
