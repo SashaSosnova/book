@@ -6,6 +6,7 @@ import {
   subscribeParentMode,
   unlockParentMode,
 } from '../utils/parentMode'
+import { useFamilySync } from '../utils/cloudSync'
 import { exportBackup, importBackup, resetProgress } from '../utils/storage'
 
 export function useParentMode() {
@@ -17,6 +18,167 @@ export function ParentOnly({ children }) {
   const unlocked = useParentMode()
   if (!unlocked) return null
   return children
+}
+
+function FamilyCloudPanel() {
+  const {
+    family,
+    firebaseReady,
+    createFamilyCloud,
+    joinFamilyCloud,
+    saveProgressToCloud,
+    restoreProgressFromCloud,
+    leaveFamilyCloud,
+  } = useFamilySync()
+  const [joinCode, setJoinCode] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  async function handleCreate() {
+    setBusy(true)
+    try {
+      await createFamilyCloud()
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function handleJoin() {
+    setBusy(true)
+    try {
+      await joinFamilyCloud(joinCode)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function handleSave() {
+    const ok = window.confirm(
+      'Записать прогресс этого устройства в облако? Данные в облаке по этому коду будут заменены.',
+    )
+    if (!ok) return
+    setBusy(true)
+    try {
+      await saveProgressToCloud()
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function handleRestore() {
+    const ok = window.confirm(
+      'Восстановить прогресс из облака? Локальные данные на этом устройстве будут заменены.',
+    )
+    if (!ok) return
+    setBusy(true)
+    try {
+      await restoreProgressFromCloud()
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <details className="parent-pin-change">
+      <summary>Облако — код семьи</summary>
+      {!firebaseReady ? (
+        <p className="hint">Firebase ещё не настроен. Нужен файл `.env` с ключами.</p>
+      ) : null}
+
+      {family.code ? (
+        <>
+          <p className="hint">
+            Код семьи: <strong className="family-code">{family.code}</strong>
+          </p>
+          <p className="hint">
+            {family.syncReady
+              ? 'Автосинк включён: новые изменения пишутся в облако сами.'
+              : 'Код привязан. Сначала один раз сохрани или восстанови прогресс.'}
+            {family.syncing ? ' …' : ''}
+          </p>
+          {family.cloudHasProgress ? (
+            <p className="hint">В облаке уже есть сохранённый прогресс.</p>
+          ) : (
+            <p className="hint">В облаке пока пусто — нужна «Сохранить прогресс» на устройстве с данными.</p>
+          )}
+          {family.lastSyncedAt ? (
+            <p className="hint">
+              Облако:{' '}
+              {new Date(family.lastSyncedAt).toLocaleString('ru-RU', {
+                day: '2-digit',
+                month: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
+            </p>
+          ) : null}
+
+          <div className="button-row family-sync-actions">
+            <button
+              type="button"
+              className="secondary-button"
+              disabled={busy || !firebaseReady}
+              onClick={handleSave}
+            >
+              Сохранить прогресс
+            </button>
+            <button
+              type="button"
+              className="secondary-button"
+              disabled={busy || !firebaseReady}
+              onClick={handleRestore}
+            >
+              Восстановить из облака
+            </button>
+          </div>
+
+          <button
+            type="button"
+            className="text-button"
+            disabled={busy}
+            onClick={leaveFamilyCloud}
+          >
+            Отключить это устройство
+          </button>
+        </>
+      ) : (
+        <>
+          <p className="hint">
+            1) Создай код на телефоне с прогрессом → «Сохранить прогресс».
+            2) На другом устройстве введи код → «Восстановить из облака».
+          </p>
+          <button
+            type="button"
+            className="secondary-button"
+            disabled={busy || !firebaseReady}
+            onClick={handleCreate}
+          >
+            Создать семью
+          </button>
+          <label className="family-join-field">
+            <span className="hint">Уже есть код?</span>
+            <input
+              value={joinCode}
+              onChange={(event) => setJoinCode(event.target.value.toUpperCase())}
+              placeholder="Например AB12CD"
+              maxLength={8}
+              autoComplete="off"
+            />
+          </label>
+          <button
+            type="button"
+            className="secondary-button"
+            disabled={busy || !firebaseReady || joinCode.trim().length < 4}
+            onClick={handleJoin}
+          >
+            Войти по коду
+          </button>
+        </>
+      )}
+
+      {family.message ? <p className="hint">{family.message}</p> : null}
+      {family.error ? <p className="gate-error">{family.error}</p> : null}
+    </details>
+  )
 }
 
 export function ParentModeToggle() {
@@ -113,10 +275,11 @@ export function ParentModeToggle() {
             </button>
           </form>
         </details>
+        <FamilyCloudPanel />
         <details className="parent-pin-change">
           <summary>Бэкап и сброс</summary>
           <p className="hint">
-            Монеты и главы хранятся на этом устройстве. После тестов можно сбросить прогресс для ребёнка.
+            Локальный файл на всякий случай. В облаке прогресс синкается по коду семьи.
           </p>
           <div className="button-row">
             <button type="button" className="secondary-button" onClick={handleExportBackup}>

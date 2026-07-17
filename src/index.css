@@ -817,6 +817,39 @@ h2 {
   margin-top: 8px;
 }
 
+.parent-pin-change .secondary-button {
+  margin-top: 6px;
+}
+
+.family-code {
+  letter-spacing: 0.12em;
+  font-size: 1.05em;
+}
+
+.family-sync-actions {
+  margin-top: 8px;
+  justify-content: center;
+}
+
+.family-join-field {
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
+  text-align: left;
+}
+
+.family-join-field input {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--panel-border);
+  font: inherit;
+  text-align: center;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 /* —— Max UX: hero, quest, your-move, motion —— */
 
 .home-hero {
@@ -882,8 +915,8 @@ h2 {
   display: block;
   width: 100%;
   height: auto;
-  max-height: 240px;
-  object-fit: contain;
+  max-height: 280px;
+  object-fit: cover;
   object-position: center;
   background: #f7f7f5;
 }

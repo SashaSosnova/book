@@ -1,7 +1,7 @@
 import { getChapterScene } from '../data/chapterScenes'
 
-/** Bump when regenerating public/scenes/*.svg so browsers don't keep old art. */
-const SCENE_ART_VERSION = '9'
+/** Bump when regenerating public/scenes art so browsers don't keep old images. */
+const SCENE_ART_VERSION = '14'
 
 /** Одна главная сцена главы — манга-кадр + короткое «что было». */
 export default function ChapterScene({ chapter }) {

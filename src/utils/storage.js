@@ -57,9 +57,14 @@ async function mirrorToNative(key, value) {
   }
 }
 
+function notifyProgressChanged() {
+  window.dispatchEvent(new Event('tom-sawyer-progress'))
+}
+
 function persist(key, value) {
   writeLocal(key, value)
   void mirrorToNative(key, value)
+  notifyProgressChanged()
 }
 
 export function getBalance() {
@@ -254,6 +259,34 @@ export function importBackup(backup) {
   return { ok: true }
 }
 
+/** Полная замена прогресса из облака (join / remote update). */
+export async function replaceProgressFromCloud(backup) {
+  if (!backup || typeof backup !== 'object' || !backup.data) {
+    return { ok: false, error: 'Неверный ответ облака' }
+  }
+
+  for (const key of ALL_KEYS) {
+    localStorage.removeItem(key)
+    try {
+      await Preferences.remove({ key })
+    } catch {
+      // Web / без плагина
+    }
+  }
+
+  for (const key of ALL_KEYS) {
+    const value = backup.data[key]
+    if (value == null || value === '') continue
+    persist(key, String(value))
+  }
+
+  window.dispatchEvent(new Event('tom-sawyer-balance'))
+  window.dispatchEvent(new Event('tom-sawyer-gifts'))
+  window.dispatchEvent(new Event('tom-sawyer-earnings'))
+  window.dispatchEvent(new Event('tom-sawyer-your-move'))
+  return { ok: true }
+}
+
 /** Полный сброс прогресса ребёнка. PIN родителя не трогаем. */
 export async function resetProgress() {
   for (const key of ALL_KEYS) {
@@ -274,6 +307,7 @@ export async function resetProgress() {
   window.dispatchEvent(new Event('tom-sawyer-balance'))
   window.dispatchEvent(new Event('tom-sawyer-gifts'))
   window.dispatchEvent(new Event('tom-sawyer-earnings'))
+  notifyProgressChanged()
   return { ok: true }
 }
 
